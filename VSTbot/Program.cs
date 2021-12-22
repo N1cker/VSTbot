@@ -17,7 +17,6 @@ namespace VSTbot
         private static TelegramBotClient botClient;
         static async Task Main(string[] args)
         {
-            //chatId = 517339890
             botClient = new TelegramBotClient(BotConf.Configuration.Token);
             using CancellationTokenSource cts = new CancellationTokenSource();
             ReceiverOptions receiverOptions = new ReceiverOptions { AllowedUpdates = { } };
