@@ -116,51 +116,5 @@ namespace VSTbot.BotConf
             Console.WriteLine($"Unknown update type: {update.Type}");
             return Task.CompletedTask;
         }
-
-        /*
-        public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
-        {
-            if (update.Type != UpdateType.Message)
-                return;
-
-            if (update.Message!.Type != MessageType.Text)
-                return;
-
-            var chatId = update.Message.Chat.Id;
-            var messageText = update.Message.Text;
-
-            Console.WriteLine($"Received a '{messageText}' message in chat {chatId}.");
-            if (messageText == "/start")
-            {
-                Message showMarkup = await botClient.SendTextMessageAsync(
-                    chatId: chatId,
-                    text: "Starting the process of job searching\n" +
-                    "Choose source to search",
-                    replyMarkup: GetButtons(),
-                    cancellationToken: cancellationToken
-                    );
-            }
-            else if (messageText == "/end")
-            {
-                Message sentMessage = await botClient.SendTextMessageAsync(
-                    chatId: chatId,
-                    text: "Cancellation of request",
-                    replyMarkup: new ReplyKeyboardRemove(),
-                    cancellationToken: cancellationToken);
-            }
-            else if (messageText == "/help")
-            {
-                string helpList = "/help - get the list of commands\n" +
-                    "/start - start job searching process\n" +
-                    "/end - end job searching process";
-
-                Message showMarkup = await botClient.SendTextMessageAsync(
-                    chatId: chatId,
-                    text: helpList,
-                    cancellationToken: cancellationToken
-                    );
-            }
-        }
-        */
     }
 }

@@ -12,7 +12,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace VSTbot
 {
-    internal class Program
+    public static class Program
     {
         private static TelegramBotClient botClient;
         static async Task Main(string[] args)
@@ -26,7 +26,7 @@ namespace VSTbot
                 BotConf.Handlers.HandleErrorAsync,
                 receiverOptions,
                 cancellationToken: cts.Token);
-
+            
             User bot = await botClient.GetMeAsync();
 
             Console.WriteLine($"Start listening for @{bot.Username}");
