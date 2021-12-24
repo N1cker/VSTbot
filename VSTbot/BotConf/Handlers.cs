@@ -1,5 +1,8 @@
-﻿using System;
+﻿using VSTbot.Parsing.Model;
+using VSTbot.Parsing.Logic;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -7,12 +10,15 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Types.ReplyMarkups;
+using System.Text;
 
 namespace VSTbot.BotConf
 {
     public static class Handlers
     {
+        static QueryData queryData = new QueryData();
         public static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             var ErrorMessage = exception switch
@@ -53,23 +59,42 @@ namespace VSTbot.BotConf
 
             Console.WriteLine($"Received a '{messageText}' message in chat {chatId}.");
 
-            var action = message.Text!.Split(' ')[0] switch
+            Task<Message> action = null;
+            switch (messageText)
             {
-                "/start" => Start(botClient, message),
-                "/end" => End(botClient, message),
-                "/help" => CommandList(botClient, message),
-                _ => null
-            };
+                case "/start":
+                    action = FirstStep(botClient, message);
+                    break;
+                case "/end":
+                    action = End(botClient, message);
+                    break;
+                case "/help":
+                    action = CommandList(botClient, message);
+                    break;
+                case string p when(p == "Dou" || p == "LinkedIn" || p == "Djinni"):
+                    queryData.SiteName = messageText;
+                    action = SecondStep(botClient, message);
+                    break;
+                default:
+                    if (queryData.SiteName != null)
+                    {
+                        queryData.ParamString = messageText;
+                        action = ThirdStep(botClient, message, queryData);
+                    }
+                    else
+                        action = End(botClient, message);
+                    break;
+            }
 
-            if(action == null)
+            if (action == null)
             {
                 return;
             }
 
             Message sentMessage = await action;
         }
-
-        private static async Task<Message> Start(ITelegramBotClient botClient, Message message)
+        
+        private static async Task<Message> FirstStep(ITelegramBotClient botClient, Message message)
         {
             ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(new List<KeyboardButton>
             {
@@ -89,8 +114,39 @@ namespace VSTbot.BotConf
                 );
         }
 
+        private static async Task<Message> SecondStep(ITelegramBotClient botClient, Message message)
+        {
+            return await botClient.SendTextMessageAsync(
+                    chatId: message.Chat.Id,
+                    text: "Write a couple of parameters in the given format:\n" +
+                    "\"job title\" \"city\" \"work experience\"\n" +
+                    "Example:\nJava Lviv 1-3\\.Net 5plus Kiev",
+                    replyMarkup: new ReplyKeyboardRemove()
+                );
+        }
+
+        private static async Task<Message> ThirdStep(ITelegramBotClient botClient, Message message, QueryData queryData)
+        {
+            List<Vacancy> result = (List<Vacancy>)ParseSite.GetVacancies(queryData.SiteName, queryData.ParamString);
+            StringBuilder stringBuilder = new StringBuilder();
+
+            foreach (Vacancy vacancy in result)
+            {
+                stringBuilder.Append(vacancy.Name);
+                stringBuilder.Append("\n");
+                stringBuilder.Append(vacancy.Link);
+                stringBuilder.Append("\n");
+            }
+            return await botClient.SendTextMessageAsync(
+                    chatId: message.Chat.Id,
+                    text: "Found " + result.Count + " vacancies:\n" + stringBuilder.ToString()
+                ); 
+        }
+
         private static async Task<Message> End(ITelegramBotClient botClient, Message message)
         {
+            queryData.SiteName = null;
+            queryData.ParamString = null;
             return await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     text: "End of the job search process",
@@ -100,8 +156,11 @@ namespace VSTbot.BotConf
 
         private static async Task<Message> CommandList(ITelegramBotClient botClient, Message message)
         {
+            queryData.SiteName = null;
+            queryData.ParamString = null;
 
-            const string helpList = "/help - get the list of commands\n" +
+            const string helpList = "The current job search process has been stopped.\n" +
+                "/help - get the list of commands\n" +
                 "/start - start job searching process\n" +
                 "/end - end job searching process";
 
