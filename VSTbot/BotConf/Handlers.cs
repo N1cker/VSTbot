@@ -64,7 +64,7 @@ namespace VSTbot.BotConf
             switch (messageText)
             {
                 case "/start":
-                    action = FirstStep(botClient, message);
+                    action = SelectSite(botClient, message);
                     break;
                 case "/end":
                     action = End(botClient, message);
@@ -74,13 +74,13 @@ namespace VSTbot.BotConf
                     break;
                 case string p when(p == "Dou" || p == "LinkedIn" || p == "Djinni"):
                     queryData.SiteName = messageText;
-                    action = SecondStep(botClient, message, queryData);
+                    action = WriteParameters(botClient, message, queryData);
                     break;
                 default:
                     if (queryData.SiteName != null)
                     {
                         queryData.ParamString = messageText;
-                        action = ThirdStep(botClient, message, queryData);
+                        action = GetResult(botClient, message, queryData);
                     }
                     else
                         action = End(botClient, message);
@@ -95,7 +95,7 @@ namespace VSTbot.BotConf
             Message sentMessage = await action;
         }
         
-        private static async Task<Message> FirstStep(ITelegramBotClient botClient, Message message)
+        private static async Task<Message> SelectSite(ITelegramBotClient botClient, Message message)
         {
             ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(new List<KeyboardButton>
             {
@@ -115,19 +115,22 @@ namespace VSTbot.BotConf
                 );
         }
 
-        private static async Task<Message> SecondStep(ITelegramBotClient botClient, Message message, QueryData queryData)
+        private static async Task<Message> WriteParameters(ITelegramBotClient botClient, Message message, QueryData queryData)
         {
             parse = new ParseSite(queryData.SiteName);
+            string paramTemplateMessage = parse.GetParamTemplate();
             return await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
-                    text: parse.GetParamTemplate(),
+                    text: paramTemplateMessage,
                     replyMarkup: new ReplyKeyboardRemove()
                 );
         }
 
-        private static async Task<Message> ThirdStep(ITelegramBotClient botClient, Message message, QueryData queryData)
+        private static async Task<Message> GetResult(ITelegramBotClient botClient, Message message, QueryData queryData)
         {
             string result = parse.GetResult(queryData.ParamString);
+            if (result == null)
+                result = "Didn't found anything suitable";
             return await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     text: result

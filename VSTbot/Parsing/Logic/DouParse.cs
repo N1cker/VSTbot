@@ -12,8 +12,8 @@ namespace VSTbot.Parsing.Logic
         public string GetParamStringTemplate()
         {
             return "Write a couple of parameters in the given format:\n" +
-                    "\"job title\" \"city\" \"work experience\"\n" +
-                    "Example:\nJava Lviv 1-3\\.Net 5plus Kiev";
+                    "\"specialization\" \"city\" \"work experience\"\n" +
+                    "Example:\nJava Lviv 3 \\ .Net 6 Kiev";
         }
 
         public IEnumerable<Vacancy> GetVacancies(string paramString)
@@ -44,7 +44,6 @@ namespace VSTbot.Parsing.Logic
                 return null;
 
             string siteLink = "https://jobs.dou.ua/vacancies/?";
-            //Null parameter here!!!!
             resultLink.Append(siteLink);
             string paramStringProcessed = ParamsProcessing(paramString);
             resultLink.Append(paramStringProcessed);
@@ -80,9 +79,34 @@ namespace VSTbot.Parsing.Logic
         private string IdentifyCityOrExp(string param)
         {
             if (param.Any(char.IsDigit))
+            {
+                param = YearsOfExpirienceToParam(param);
                 return param.Insert(0, "&exp=");
+            }
             else
                 return param.Insert(0, "&city=");
+        }
+
+        private string YearsOfExpirienceToParam(string param)
+        {
+            if (param == null)
+                return null;
+
+            int numbParam;
+            bool success = Int32.TryParse(param, out numbParam);
+            if (!success)
+                return null;
+
+            string resultParam = numbParam switch
+            {
+                int n when n >= 0 && n < 1 => "0-1",
+                int n when n >= 1 && n < 3 => "1-3",
+                int n when n >= 3 && n < 5 => "3-5",
+                int n when n >= 5 => "5plus",
+                _ => null
+            };
+
+            return resultParam;
         }
 
     }

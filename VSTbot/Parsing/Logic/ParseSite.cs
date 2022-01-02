@@ -4,12 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace VSTbot.Parsing.Logic
 {
     public class ParseSite
     {
-        private static IParse parse;
+        private IParse parse;
 
         public ParseSite(string siteName)
         {
@@ -34,8 +35,7 @@ namespace VSTbot.Parsing.Logic
             if (parse == null)
                 return null;
 
-            string result = parse.GetParamStringTemplate();
-            return result;
+            return parse.GetParamStringTemplate();
         }
 
         public string GetResult(string paramString)
