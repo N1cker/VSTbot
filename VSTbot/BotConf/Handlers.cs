@@ -19,6 +19,7 @@ namespace VSTbot.BotConf
     public static class Handlers
     {
         static QueryData queryData = new QueryData();
+        static ParseSite parse;
         public static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             var ErrorMessage = exception switch
@@ -73,7 +74,7 @@ namespace VSTbot.BotConf
                     break;
                 case string p when(p == "Dou" || p == "LinkedIn" || p == "Djinni"):
                     queryData.SiteName = messageText;
-                    action = SecondStep(botClient, message);
+                    action = SecondStep(botClient, message, queryData);
                     break;
                 default:
                     if (queryData.SiteName != null)
@@ -114,32 +115,22 @@ namespace VSTbot.BotConf
                 );
         }
 
-        private static async Task<Message> SecondStep(ITelegramBotClient botClient, Message message)
+        private static async Task<Message> SecondStep(ITelegramBotClient botClient, Message message, QueryData queryData)
         {
+            parse = new ParseSite(queryData.SiteName);
             return await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
-                    text: "Write a couple of parameters in the given format:\n" +
-                    "\"job title\" \"city\" \"work experience\"\n" +
-                    "Example:\nJava Lviv 1-3\\.Net 5plus Kiev",
+                    text: parse.GetParamTemplate(),
                     replyMarkup: new ReplyKeyboardRemove()
                 );
         }
 
         private static async Task<Message> ThirdStep(ITelegramBotClient botClient, Message message, QueryData queryData)
         {
-            List<Vacancy> result = (List<Vacancy>)ParseSite.GetVacancies(queryData.SiteName, queryData.ParamString);
-            StringBuilder stringBuilder = new StringBuilder();
-
-            foreach (Vacancy vacancy in result)
-            {
-                stringBuilder.Append(vacancy.Name);
-                stringBuilder.Append("\n");
-                stringBuilder.Append(vacancy.Link);
-                stringBuilder.Append("\n");
-            }
+            string result = parse.GetResult(queryData.ParamString);
             return await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
-                    text: "Found " + result.Count + " vacancies:\n" + stringBuilder.ToString()
+                    text: result
                 ); 
         }
 

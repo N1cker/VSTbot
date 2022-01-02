@@ -7,80 +7,55 @@ using System.Linq;
 
 namespace VSTbot.Parsing.Logic
 {
-    public static class ParseSite
+    public class ParseSite
     {
-        public static IEnumerable<Vacancy> GetVacancies(string siteName, string paramString)
+        private static IParse parse;
+
+        public ParseSite(string siteName)
         {
-            HtmlWeb web = new HtmlWeb();
-            string link = InputData(siteName, paramString);
-            List<Vacancy> vacancies = new List<Vacancy>();
-
-            var htmlDoc = web.Load(link);
-
-            HtmlNodeCollection htmlNodes = htmlDoc.DocumentNode.SelectNodes("//*//*[@id=\"vacancyListId\"]/ul/li/div/div/a");
-
-            if (htmlNodes != null)
+            switch(siteName)
             {
-                foreach (var item in htmlNodes)
-                {
-                    vacancies.Add(new Vacancy { Name = item.InnerText, Link = item.Attributes["href"].Value });
-                }
-            }
-            return vacancies;
-        }
-
-        private static string InputData(string siteName, string paramString)
-        {
-            StringBuilder resultLink = new StringBuilder();
-
-            if (siteName == null || paramString == null)
-                return null;
-
-            string siteLink = siteName switch
-            {
-                "Dou" => "https://jobs.dou.ua/vacancies/?",
-                _ => null
-
-            };
-            //Null parameter here!!!!
-            resultLink.Append(siteLink);
-            string paramStringProcessed = ParamsProcessing(paramString);
-            resultLink.Append(paramStringProcessed);
-
-            return resultLink.ToString();
-        }
-
-        private static string ParamsProcessing(string paramString)
-        {
-            string[] paramArr = paramString.Split(new char[] { ' ' });
-
-            switch (paramArr.Length)
-            {
-                case 1:
-                    paramArr[0] = paramArr[0].Insert(0, "category=");
+                case "Dou":
+                    parse = new DouParse(); 
                     break;
-                case 2:
-                    paramArr[0] = paramArr[0].Insert(0, "category=");
-                    paramArr[1] = paramArr[1].IdentifyCityOrExp();
+                case "LinkedIn":
+                    parse = new LinkedInParse();
                     break;
-                case 3:
-                    paramArr[0] = paramArr[0].Insert(0, "category=");
-                    paramArr[1] = paramArr[1].IdentifyCityOrExp();
-                    paramArr[2] = paramArr[2].IdentifyCityOrExp();
+                case "Djinni":
+                    parse = new DjinniParse();
                     break;
                 default:
                     break;
+
+            };
+        }
+        public string GetParamTemplate()
+        {
+            if (parse == null)
+                return null;
+
+            string result = parse.GetParamStringTemplate();
+            return result;
+        }
+
+        public string GetResult(string paramString)
+        {
+            if(parse == null)
+                return null;
+
+            List<Vacancy> result = (List<Vacancy>)parse.GetVacancies(paramString);
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.Append("Found " + result.Count + " vacancies:\n");
+            foreach (Vacancy vacancy in result)
+            {
+                stringBuilder.Append(vacancy.Name);
+                stringBuilder.Append("\n");
+                stringBuilder.Append(vacancy.Link);
+                stringBuilder.Append("\n");
             }
 
-            return String.Concat(paramArr);
+            return stringBuilder.ToString();
         }
 
-        private static string IdentifyCityOrExp(this string param)
-        {
-            if (param.Any(char.IsDigit))
-                return param.Insert(0, "&exp=");
-            else
-                return param.Insert(0, "&city=");
-        }
     }
 }
