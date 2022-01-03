@@ -72,7 +72,7 @@ namespace VSTbot.BotConf
                 case "/help":
                     action = CommandList(botClient, message);
                     break;
-                case string p when(p == "Dou" || p == "LinkedIn" || p == "Djinni"):
+                case string p when(p == "Dou" || p == "Djinni"):
                     queryData.SiteName = messageText;
                     action = WriteParameters(botClient, message, queryData);
                     break;
@@ -100,7 +100,6 @@ namespace VSTbot.BotConf
             ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(new List<KeyboardButton>
             {
                 new KeyboardButton("Dou"),
-                new KeyboardButton("LinkedIn"),
                 new KeyboardButton("Djinni") })
             {
                 OneTimeKeyboard = true,
@@ -118,7 +117,7 @@ namespace VSTbot.BotConf
         private static async Task<Message> WriteParameters(ITelegramBotClient botClient, Message message, QueryData queryData)
         {
             parse = new ParseSite(queryData.SiteName);
-            string paramTemplateMessage = parse.GetParamTemplate();
+            string paramTemplateMessage = await parse.GetParamTemplateAsync();
             return await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     text: paramTemplateMessage,
@@ -128,7 +127,7 @@ namespace VSTbot.BotConf
 
         private static async Task<Message> GetResult(ITelegramBotClient botClient, Message message, QueryData queryData)
         {
-            string result = parse.GetResult(queryData.ParamString);
+            string result = await parse.GetResultAsync(queryData.ParamString);
             if (result == null)
                 result = "Didn't found anything suitable";
             return await botClient.SendTextMessageAsync(

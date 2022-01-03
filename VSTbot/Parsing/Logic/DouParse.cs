@@ -3,19 +3,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using VSTbot.Parsing.Model;
 
 namespace VSTbot.Parsing.Logic
 {
     public class DouParse : IParse
     {
-        public string GetParamStringTemplate()
+        public async Task<string> GetParamStringTemplateAsync()
         {
-            return "Write a couple of parameters in the given format:\n" +
+            return await Task.Run(() => "Write a couple of parameters in the given format:\n" +
                     "\"specialization\" \"city\" \"work experience\"\n" +
-                    "Example:\nJava Lviv 3 \\ .Net 6 Kiev";
+                    "Example:\nJava Lviv 3 \\ .Net 6 Kiev");
         }
-
+        public async Task<IEnumerable<Vacancy>> GetVacanciesAsync(string paramString)
+        {
+            return await Task.Run(() => GetVacancies(paramString));
+        }
         public IEnumerable<Vacancy> GetVacancies(string paramString)
         {
             HtmlWeb web = new HtmlWeb();

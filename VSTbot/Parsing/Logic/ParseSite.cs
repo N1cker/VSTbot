@@ -19,9 +19,6 @@ namespace VSTbot.Parsing.Logic
                 case "Dou":
                     parse = new DouParse(); 
                     break;
-                case "LinkedIn":
-                    parse = new LinkedInParse();
-                    break;
                 case "Djinni":
                     parse = new DjinniParse();
                     break;
@@ -30,31 +27,41 @@ namespace VSTbot.Parsing.Logic
 
             };
         }
-        public string GetParamTemplate()
+
+        public async Task<string> GetParamTemplateAsync()
         {
             if (parse == null)
                 return null;
 
-            return parse.GetParamStringTemplate();
+            return await parse.GetParamStringTemplateAsync();
         }
 
-        public string GetResult(string paramString)
+        public async Task<string> GetResultAsync(string paramString)
         {
             if(parse == null)
                 return null;
 
-            List<Vacancy> result = (List<Vacancy>)parse.GetVacancies(paramString);
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.Append("Found " + result.Count + " vacancies:\n");
-            foreach (Vacancy vacancy in result)
-            {
-                stringBuilder.Append(vacancy.Name);
-                stringBuilder.Append("\n");
-                stringBuilder.Append(vacancy.Link);
-                stringBuilder.Append("\n");
-            }
+            List<Vacancy> result = (List<Vacancy>)await parse.GetVacanciesAsync(paramString);
 
-            return stringBuilder.ToString();
+            return await Task.Run(() => ListToString(result));
+        }
+
+        public async Task<string> ListToString(List<Vacancy> vacancies)
+        {
+            return await Task.Run(() =>
+            {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.Append("Found " + vacancies.Count + " vacancies:\n");
+                foreach (Vacancy vacancy in vacancies)
+                {
+                    stringBuilder.Append(vacancy.Name);
+                    stringBuilder.Append("\n");
+                    stringBuilder.Append(vacancy.Link);
+                    stringBuilder.Append("\n");
+                }
+                return stringBuilder.ToString();
+            } 
+            );
         }
 
     }
